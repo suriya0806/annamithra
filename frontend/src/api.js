@@ -1,4 +1,21 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5042/api";
+// Base server URL (configured via VITE_API_URL, e.g. "https://annamithra-e1c9.onrender.com" or "http://localhost:5042")
+const rawApiUrl = (import.meta.env.VITE_API_URL || "http://localhost:5042").trim().replace(/\/+$/, "");
+
+// Normalize API_BASE so it always points to the /api endpoint root exactly once
+export const API_BASE = rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl}/api`;
+
+export function buildUrl(path) {
+  let cleanPath = (path || "").trim();
+  if (!cleanPath.startsWith("/")) {
+    cleanPath = `/${cleanPath}`;
+  }
+  if (cleanPath.startsWith("/api/")) {
+    cleanPath = cleanPath.slice(4);
+  } else if (cleanPath === "/api") {
+    cleanPath = "";
+  }
+  return `${API_BASE}${cleanPath}`;
+}
 
 function base64UrlEncode(str) {
   const bytes = new TextEncoder().encode(str);
@@ -76,8 +93,19 @@ async function getBranchManagerAuthToken(currentUser) {
 async function request(path, options = {}) {
   let token = localStorage.getItem("samaya_token");
 
+  // Normalize path so /api is never duplicated and prefix checks work consistently
+  let cleanPath = (path || "").trim();
+  if (!cleanPath.startsWith("/")) {
+    cleanPath = `/${cleanPath}`;
+  }
+  if (cleanPath.startsWith("/api/")) {
+    cleanPath = cleanPath.slice(4);
+  } else if (cleanPath === "/api") {
+    cleanPath = "";
+  }
+
   // Allow Branch Manager to manage users inside their branch
-  if (path.startsWith("/users")) {
+  if (cleanPath.startsWith("/users")) {
     try {
       const currentUser = JSON.parse(localStorage.getItem("samaya_user") || "null");
       if (currentUser?.role === "Branch Manager" && currentUser.organizationId) {
@@ -89,7 +117,7 @@ async function request(path, options = {}) {
   }
 
   // Elevate token for order cancellation when customer requests (allows Waiter to cancel order)
-  if (path.match(/\/orders\/\d+\/status/) && options.body && options.body.includes('"Cancelled"')) {
+  if (cleanPath.match(/\/orders\/\d+\/status/) && options.body && options.body.includes('"Cancelled"')) {
     try {
       const currentUser = JSON.parse(localStorage.getItem("samaya_user") || "null");
       if (currentUser?.organizationId) {
@@ -101,7 +129,7 @@ async function request(path, options = {}) {
   }
 
   // Disallow staff, waiter, chef from requesting reports
-  if (path.startsWith("/reports") || path.startsWith("/kitchen/reports")) {
+  if (cleanPath.startsWith("/reports") || cleanPath.startsWith("/kitchen/reports")) {
     try {
       const currentUser = JSON.parse(localStorage.getItem("samaya_user") || "null");
       const userRole = (currentUser?.role || "").trim().toLowerCase();
@@ -122,7 +150,7 @@ async function request(path, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${API_BASE}${cleanPath}`, {
     ...options,
     headers
   });
@@ -137,7 +165,7 @@ async function request(path, options = {}) {
   }
 
   if (!response.ok) {
-    if (response.status === 401 && !path.includes("/auth/login")) {
+    if (response.status === 401 && !cleanPath.includes("/auth/login")) {
       localStorage.removeItem("samaya_token");
       localStorage.removeItem("samaya_user");
       window.dispatchEvent(
@@ -171,6 +199,9 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  baseUrl: API_BASE,
+  buildUrl,
+
   // Auth
   login: (body) =>
     request("/auth/login", {

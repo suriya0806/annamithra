@@ -10,5 +10,6 @@
 .DS_Store
 .env
 .env.*
+!.env.example
 appsettings.Development.json
 *.local.json
