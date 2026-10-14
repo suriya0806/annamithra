@@ -56,7 +56,11 @@ builder.Services.AddAuthorization();
 
 var configuredFrontendOrigin = builder.Configuration["Frontend:Origin"]
     ?? builder.Configuration["Frontend__Origin"];
-var allowedOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+var allowedOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    "https://frontend-2002yeff3-suriya0806s-projects.vercel.app",
+    "https://frontend-alpha-inky-16.vercel.app"
+};
 
 if (!string.IsNullOrWhiteSpace(configuredFrontendOrigin))
 {
@@ -80,19 +84,40 @@ builder.Services.AddCors(options =>
                 if (string.IsNullOrWhiteSpace(origin))
                     return false;
 
-                var trimmedOrigin = origin.TrimEnd('/');
+                var trimmedOrigin = origin.Trim().TrimEnd('/');
 
                 // 1. Keep existing localhost development support
                 if (trimmedOrigin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) ||
                     trimmedOrigin.StartsWith("https://localhost:", StringComparison.OrdinalIgnoreCase) ||
                     trimmedOrigin.Equals("http://localhost", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedOrigin.Equals("https://localhost", StringComparison.OrdinalIgnoreCase))
+                    trimmedOrigin.Equals("https://localhost", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedOrigin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedOrigin.StartsWith("https://127.0.0.1:", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
 
-                // 2. Allow exact production Vercel frontend origin configured via Frontend__Origin
-                return allowedOrigins.Contains(trimmedOrigin);
+                // 2. Allow exact production and configured frontend origins
+                if (allowedOrigins.Contains(trimmedOrigin))
+                {
+                    return true;
+                }
+
+                // 3. Allow Vercel preview and deployment origins for this project
+                if (Uri.TryCreate(trimmedOrigin, UriKind.Absolute, out var uri))
+                {
+                    var host = uri.Host;
+                    if (host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase) &&
+                        (host.StartsWith("frontend-", StringComparison.OrdinalIgnoreCase) ||
+                         host.Contains("suriya0806", StringComparison.OrdinalIgnoreCase) ||
+                         host.Contains("annamithra", StringComparison.OrdinalIgnoreCase) ||
+                         host.Contains("samaya", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             });
     });
 });
