@@ -1,0 +1,13 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/appsettings.Development.json
+**/*.user
+**/*.suo
+frontend/
+database/
+scripts/

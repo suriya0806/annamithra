@@ -1,19 +1,23 @@
 # ==============================================================================
 # Multi-stage Dockerfile for SAMAYA / ANNAMITHRA Backend (ASP.NET Core Web API)
 # Target Runtime: .NET 10
-# Deployment Target: Render (Docker Web Service)
+# Deployment Target: Render (Docker Web Service, Root Directory: repository root)
+# Dockerfile Path: backend/Samaya.API/Dockerfile
 # ==============================================================================
 
 # Stage 1: Build & Publish using official .NET 10 SDK
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore dependencies (leveraging Docker layer cache)
-COPY ["Samaya.API.csproj", "./"]
-RUN dotnet restore "Samaya.API.csproj"
+# Copy csproj from repository root context and restore dependencies
+COPY ["backend/Samaya.API/Samaya.API.csproj", "backend/Samaya.API/"]
+RUN dotnet restore "backend/Samaya.API/Samaya.API.csproj"
 
-# Copy remaining source code and build/publish Release bundle
-COPY . .
+# Copy backend source files from repository root context
+COPY ["backend/Samaya.API/", "backend/Samaya.API/"]
+
+# Build and publish Release bundle
+WORKDIR "/src/backend/Samaya.API"
 RUN dotnet publish "Samaya.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Stage 2: Minimal Production Runtime using official .NET 10 ASP.NET image
