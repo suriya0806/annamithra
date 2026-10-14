@@ -45,6 +45,11 @@ namespace Samaya.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Organization>().ToTable("organizations");
+            modelBuilder.Entity<Branch>().ToTable("branches");
+            modelBuilder.Entity<User>().ToTable("users");
+            modelBuilder.Entity<Role>().ToTable("roles");
+
             modelBuilder.Entity<Branch>()
                 .HasOne(b => b.Organization)
                 .WithMany(o => o.Branches)
