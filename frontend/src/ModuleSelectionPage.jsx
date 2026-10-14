@@ -166,7 +166,6 @@ export function getRoleModuleAccess(user) {
 
   // KMS permissions
   const hasProduction = [
-    "Organization Admin",
     "Branch Manager",
     "Kitchen Manager",
     "Chef",

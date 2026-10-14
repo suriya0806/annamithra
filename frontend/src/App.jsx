@@ -718,10 +718,6 @@ export function getPermittedPagesForRole(role, isPosOnly = false, isKmsOnly = fa
       "branch_details",
       "users",
       "reports",
-      "production",
-      "production_plan",
-      "material_issue",
-      "material_return",
       "purchase",
       "purchases",
       "vendors",
@@ -946,7 +942,6 @@ function Dashboard({
               { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Organization dashboard & branch count" },
               { id: "branches", label: "Branches", icon: Building2, desc: "Create, list and open branch details" },
               { id: "users", label: "Users & Access", icon: Users, desc: "Create and manage organization staff" },
-              { id: "production", label: "Production", icon: Factory, desc: "Daily production planning & material issues" },
               { id: "reports", label: "Reports", icon: BarChart3, desc: "Branch reports, date filters & CSV export" }
             ]
           }
@@ -973,7 +968,7 @@ function Dashboard({
             id: "production",
             label: "Production",
             icon: Factory,
-            show: !isPosOnly && ["Super Admin", "Organization Admin", "Branch Manager", "Kitchen Manager", "Chef", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
+            show: !isPosOnly && !isOrgAdmin && ["Super Admin", "Branch Manager", "Kitchen Manager", "Chef", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
             desc: "Production: Plan, Issue & Return"
           },
           {
@@ -1037,7 +1032,7 @@ function Dashboard({
             id: "production",
             label: "Production",
             icon: Factory,
-            show: ["Super Admin", "Organization Admin", "Branch Manager", "Kitchen Manager", "Chef", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
+            show: !isOrgAdmin && ["Super Admin", "Branch Manager", "Kitchen Manager", "Chef", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
             desc: "Production: Plan, Issue & Return"
           }
         ]

@@ -85,7 +85,6 @@ export default function ProductionDashboard({ user, initialTab = "plan", onNavig
 
   const canManage = [
     "Super Admin",
-    "Organization Admin",
     "Branch Manager",
     "Kitchen Manager",
     "Chef",
