@@ -54,6 +54,19 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+var configuredFrontendOrigin = builder.Configuration["Frontend:Origin"]
+    ?? builder.Configuration["Frontend__Origin"];
+var allowedOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+if (!string.IsNullOrWhiteSpace(configuredFrontendOrigin))
+{
+    var splitOrigins = configuredFrontendOrigin.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    foreach (var o in splitOrigins)
+    {
+        allowedOrigins.Add(o.TrimEnd('/'));
+    }
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -63,7 +76,24 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowCredentials()
             .SetIsOriginAllowed(origin =>
-                origin.StartsWith("http://localhost:"));
+            {
+                if (string.IsNullOrWhiteSpace(origin))
+                    return false;
+
+                var trimmedOrigin = origin.TrimEnd('/');
+
+                // 1. Keep existing localhost development support
+                if (trimmedOrigin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedOrigin.StartsWith("https://localhost:", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedOrigin.Equals("http://localhost", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedOrigin.Equals("https://localhost", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                // 2. Allow exact production Vercel frontend origin configured via Frontend__Origin
+                return allowedOrigins.Contains(trimmedOrigin);
+            });
     });
 });
 
