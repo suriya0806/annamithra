@@ -1,0 +1,108 @@
+Created At: 2026-09-24T14:21:25+05:30
+Completed At: 2026-09-24T14:21:25+05:30
+File Path: `file:///c:/Users/DELL/Downloads/SAMAYA_SuperAdmin_Organization_Delete_v7/frontend/src/styles.css`
+Total Lines: 720
+Total Bytes: 24450
+Showing lines 1 to 100
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+2: 
+3: :root {
+4:   font-family: Inter, system-ui, sans-serif;
+5:   color: #e9eef8;
+6:   background: #070b12;
+7:   font-synthesis: none;
+8:   text-rendering: optimizeLegibility;
+9: }
+10: 
+11: * { box-sizing: border-box; }
+12: body { margin: 0; min-width: 320px; background: #070b12; }
+13: button, input, select { font: inherit; }
+14: button { cursor: pointer; }
+15: button:disabled { opacity: .65; cursor: not-allowed; }
+16: 
+17: .auth-shell { min-height: 100vh; display: grid; grid-template-columns: 1.05fr .95fr; background: #090e17; }
+18: .auth-art { position: relative; overflow: hidden; padding: 54px; display: flex; flex-direction: column; justify-content: space-between; background: radial-gradient(circle at 25% 20%, rgba(53,123,255,.28), transparent 38%), linear-gradient(135deg, #0c172a, #07101e 65%, #0a1321); }
+19: .auth-art:after { content:""; position:absolute; width:560px; height:560px; border:1px solid rgba(129,166,255,.12); border-radius:50%; right:-180px; bottom:-180px; box-shadow:0 0 0 70px rgba(90,140,255,.03),0 0 0 140px rgba(90,140,255,.02); }
+20: .brand-mark { width:38px; height:38px; border-radius:11px; display:grid; place-items:center; background:linear-gradient(145deg,#5f9cff,#2457d6); color:#fff; font-weight:800; box-shadow:0 8px 24px rgba(43,105,235,.35); }
+21: .brand-mark.large { width:52px; height:52px; border-radius:15px; font-size:21px; }
+22: .art-content { max-width:620px; position:relative; z-index:1; }
+23: .eyebrow { font-size:11px; font-weight:800; letter-spacing:.15em; color:#7fa9ff; }
+24: .art-content h1 { font-size:clamp(42px,5vw,72px); line-height:1.02; letter-spacing:-.05em; margin:17px 0 20px; }
+25: .art-content p { max-width:530px; color:#a7b4c8; font-size:17px; line-height:1.7; }
+26: .feature-pills { display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; }
+27: .feature-pills span { padding:9px 13px; border:1px solid rgba(154,180,230,.18); background:rgba(255,255,255,.045); border-radius:999px; color:#c8d4e7; font-size:12px; }
+28: 
+29: .auth-panel { display:grid; place-items:center; padding:36px; background:#f7f9fc; color:#0e1726; }
+30: .auth-card { width:min(460px,100%); background:#fff; border:1px solid #e5eaf1; border-radius:24px; padding:38px; box-shadow:0 24px 70px rgba(16,28,48,.08); }
+31: .auth-card h2 { margin:10px 0 8px; font-size:30px; letter-spacing:-.035em; }
+32: .muted { color:#738096; line-height:1.6; margin:0 0 25px; }
+33: .mobile-brand { display:none; align-items:center; gap:10px; margin-bottom:20px; }
+34: .form-stack { display:grid; gap:16px; }
+35: .field { display:grid; gap:7px; }
+36: .field > span { font-size:12px; font-weight:700; color:#48566a; }
+37: .field input, .field select { width:100%; border:1px solid #dce3ec; background:#fbfcfe; border-radius:11px; padding:12px 13px; outline:none; color:#101a29; transition:.18s; }
+38: .field input:focus, .field select:focus { border-color:#4d83e8; box-shadow:0 0 0 4px rgba(77,131,232,.1); }
+39: .two-col { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+40: .primary-btn { width:100%; border:0; border-radius:11px; padding:13px 16px; background:#1e5eea; color:#fff; font-weight:700; display:flex; justify-content:center; align-items:center; gap:7px; box-shadow:0 10px 25px rgba(30,94,234,.23); }
+41: .primary-btn.compact { width:auto; }
+42: .switch-auth { border:0; background:none; color:#3266c6; font-size:13px; font-weight:700; width:100%; margin-top:20px; }
+43: .error-box,.success-box { padding:11px 13px; border-radius:10px; font-size:13px; margin-bottom:14px; }
+44: .error-box { background:#fff0f0; color:#b22c39; border:1px solid #ffd2d7; }
+45: .success-box { background:#edf9f1; color:#227544; border:1px solid #ccebd5; }
+46: 
+47: .app-shell { min-height:100vh; display:flex; background:#f3f6fa; color:#152033; }
+48: .sidebar { width:254px; background:#09111f; color:#c9d4e5; padding:20px 14px; display:flex; flex-direction:column; position:fixed; inset:0 auto 0 0; z-index:30; }
+49: .sidebar-top { display:flex; align-items:center; justify-content:space-between; padding:4px 9px 22px; }
+50: .brand { display:flex; gap:10px; align-items:center; }
+51: .brand strong { display:block; color:#fff; letter-spacing:.08em; font-size:14px; }
+52: .brand small { color:#75849b; font-size:10px; display:block; margin-top:3px; }
+53: .workspace-card { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.045); border-radius:14px; padding:12px; display:flex; gap:10px; margin:2px 5px 22px; }
+54: .workspace-icon { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; background:#173a78; color:#79a9ff; }
+55: .workspace-card strong,.workspace-card span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:165px; }
+56: .workspace-card strong { font-size:12px; color:#edf3ff; }
+57: .workspace-card span { font-size:10px; color:#71819a; margin-top:3px; }
+58: .nav-label { display:block; padding:0 10px 9px; color:#596b85; font-size:9px; font-weight:800; letter-spacing:.16em; }
+59: .nav-item { width:100%; border:0; background:transparent; color:#8d9cb1; padding:11px 11px; border-radius:10px; display:flex; gap:11px; align-items:center; margin:2px 0; font-size:13px; font-weight:600; text-align:left; }
+60: .nav-item:hover { background:rgba(255,255,255,.05); color:#fff; }
+61: .nav-item.active { background:linear-gradient(90deg,#1a4d9c,#14376d); color:#fff; box-shadow:inset 3px 0 #6ba0ff; }
+62: .sidebar-bottom { margin-top:auto; }
+63: .security-note { display:flex; gap:9px; padding:12px 10px; border-top:1px solid rgba(255,255,255,.07); border-bottom:1px solid rgba(255,255,255,.07); margin-bottom:10px; color:#6fca91; }
+64: .security-note strong,.security-note span { display:block; }
+65: .security-note strong { font-size:11px; color:#cad5e5; }
+66: .security-note span { font-size:9px; color:#63748d; margin-top:3px; }
+67: .logout-btn { width:100%; border:0; background:transparent; color:#8d9cb1; padding:11px; border-radius:10px; display:flex; align-items:center; gap:10px; font-size:12px; }
+68: .logout-btn:hover { background:#1b2535; color:#fff; }
+69: 
+70: .main { margin-left:254px; width:calc(100% - 254px); min-height:100vh; }
+71: .topbar { height:82px; padding:0 34px; background:#fff; border-bottom:1px solid #e6ebf1; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:20; }
+72: .topbar-kicker { font-size:9px; font-weight:800; letter-spacing:.14em; color:#8b98aa; }
+73: .topbar h2 { margin:5px 0 0; font-size:20px; letter-spacing:-.03em; }
+74: .profile { display:flex; align-items:center; gap:10px; }
+75: .avatar { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; background:#e7efff; color:#2d64c8; font-size:12px; font-weight:800; }
+76: .profile-text strong,.profile-text span { display:block; }
+77: .profile-text strong { font-size:12px; }
+78: .profile-text span { color:#7b8798; font-size:10px; margin-top:3px; }
+79: .content { padding:30px 34px 50px; max-width:1450px; margin:auto; }
+80: .hero-card { min-height:205px; padding:30px; border-radius:20px; color:#fff; background:radial-gradient(circle at 80% 20%,rgba(92,155,255,.45),transparent 30%), linear-gradient(120deg,#0c1c35,#153e7d); display:flex; justify-content:space-between; align-items:center; overflow:hidden; position:relative; }
+81: .hero-card:after { content:""; position:absolute; width:290px; height:290px; border:1px solid rgba(255,255,255,.12); border-radius:50%; right:70px; top:-120px; }
+82: .hero-card h1 { margin:9px 0; font-size:35px; letter-spacing:-.045em; }
+83: .hero-card p { margin:0; color:#b9c8dd; font-size:13px; }
+84: .hero-orbit { width:92px; height:92px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); position:relative; z-index:2; }
+85: .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin:18px 0; }
+86: .stat-card { text-align:left; background:#fff; border:1px solid #e4eaf1; border-radius:16px; padding:18px; box-shadow:0 7px 24px rgba(24,42,67,.04); transition:.18s; }
+87: .stat-card:hover { transform:translateY(-2px); border-color:#c9d8f1; }
+88: .stat-head { display:flex; justify-content:space-between; align-items:center; color:#78869a; font-size:11px; font-weight:700; }
+89: .stat-icon { width:32px; height:32px; display:grid; place-items:center; border-radius:9px; background:#eef4ff; color:#3770d6; }
+90: .stat-card strong { display:block; font-size:26px; margin:15px 0 3px; letter-spacing:-.04em; }
+91: .stat-card small { color:#96a1b1; font-size:10px; }
+92: .section-grid { display:grid; grid-template-columns:1.25fr .75fr; gap:18px; }
+93: .panel { background:#fff; border:1px solid #e4eaf1; border-radius:16px; box-shadow:0 7px 24px rgba(24,42,67,.035); padding:20px; }
+94: .panel-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; color:#708098; }
+95: .panel-head h3 { color:#172337; font-size:16px; margin:5px 0 0; letter-spacing:-.02em; }
+96: .operation { display:flex; align-items:center; gap:12px; padding:13px 0; border-top:1px solid #edf0f4; }
+97: .operation-icon { width:34px; height:34px; border-radius:9px; background:#f0f5ff; color:#356fd5; display:grid; place-items:center; }
+98: .operation div:nth-child(2) { flex:1; }
+99: .operation strong,.operation span { display:block; }
+100: .operation strong { font-size:12px; }
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
