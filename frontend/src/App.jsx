@@ -1033,7 +1033,7 @@ function Dashboard({
             id: "orders",
             label: "Orders",
             icon: ShoppingCart,
-            show: !isKmsOnly && ["Branch Manager", "Kitchen Manager", "Chef", "Waiter", "Accountant", "Cashier"].includes(user.role),
+            show: !isKmsOnly && !isSuperAdmin && ["Branch Manager", "Kitchen Manager", "Chef", "Waiter", "Accountant", "Cashier"].includes(user.role),
             desc: "Customer dining tables & takeaway orders"
           },
           {
@@ -1200,6 +1200,17 @@ function Dashboard({
   );
 
   function navigate(id, extra = null) {
+    if (!permittedPages.includes(id)) {
+      const fallback = permittedPages.includes("dashboard") ? "dashboard" : (permittedPages[0] || "dashboard");
+      setPage(fallback);
+      try {
+        const path = fallback === "dashboard" ? "/" : `/${fallback}`;
+        if (typeof window !== "undefined" && window.location.pathname !== path) {
+          window.history.pushState(null, "", path);
+        }
+      } catch (_) {}
+      return;
+    }
     if (extra && extra.branchId) {
       setSelectedBranchId(extra.branchId);
     } else if (id !== "branch_details") {
@@ -1612,7 +1623,7 @@ function Dashboard({
               {page === "kds" && <KitchenPage user={user} />}
               {page === "inventory" && <InventoryPage user={user} />}
               {page === "menu" && <MenuPage user={user} />}
-              {page === "orders" && <OrdersPage user={user} onNavigate={navigate} />}
+              {page === "orders" && !isSuperAdmin && <OrdersPage user={user} onNavigate={navigate} />}
               {page === "billing" && canBill && <CashierBillingPage user={user} onNavigate={navigate} />}
               {page === "reports" && canViewReports && <ReportsAndAnalytics user={user} />}
             </>
@@ -7117,7 +7128,26 @@ function KOTTicketView({ kot }) {
 }
 
 function OrdersPage({ user = {}, onNavigate }) {
-  const canBill = ["Super Admin", "Organization Admin", "Branch Manager", "Accountant", "Cashier"].includes(user?.role);
+  const isSuperAdmin = user?.role === "Super Admin";
+
+  useEffect(() => {
+    if (isSuperAdmin && onNavigate) {
+      onNavigate("dashboard");
+    }
+  }, [isSuperAdmin, onNavigate]);
+
+  if (isSuperAdmin) {
+    return (
+      <div className="panel" style={{ padding: "32px", textAlign: "center" }}>
+        <h3>Access Restricted</h3>
+        <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
+          Super Admin does not have access to POS Orders. Redirecting to Dashboard...
+        </p>
+      </div>
+    );
+  }
+
+  const canBill = ["Branch Manager", "Accountant", "Cashier"].includes(user?.role);
   return <WaiterOrderPage user={user} onNavigate={onNavigate} canBill={canBill} />;
 }
 
@@ -7229,12 +7259,13 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
   const [assignWaiterId, setAssignWaiterId] = useState("");
   const [readyFilterWaiter, setReadyFilterWaiter] = useState("my"); // "my" | "all"
 
+  const isSuperAdmin = user?.role === "Super Admin";
+  const isOrgAdmin = user?.role === "Organization Admin";
+  const isBranchManager = user?.role === "Branch Manager";
   const isWaiter = user?.role === "Waiter";
-  const isBranchManager = user?.role === "Branch Manager" || user?.role === "Organization Admin" || user?.role === "Super Admin";
-  const isOrgAdmin = user?.role === "Organization Admin" || user?.role === "Super Admin";
   const canBill = canBillProp !== undefined
     ? canBillProp
-    : ["Super Admin", "Organization Admin", "Branch Manager", "Accountant", "Cashier"].includes(user?.role);
+    : ["Branch Manager", "Accountant", "Cashier"].includes(user?.role);
 
   // Modals & Panels state
   const [startOrderModal, setStartOrderModal] = useState(false);
