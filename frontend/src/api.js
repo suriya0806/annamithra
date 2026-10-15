@@ -22,79 +22,6 @@ export function buildUrl(path) {
   return `${API_BASE}${cleanPath}`;
 }
 
-function base64UrlEncode(str) {
-  const bytes = new TextEncoder().encode(str);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-function bufferToBase64Url(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-let cachedBmToken = null;
-let cachedBmExpiry = 0;
-
-async function getBranchManagerAuthToken(currentUser) {
-  const now = Date.now();
-  if (cachedBmToken && cachedBmExpiry > now + 60000) {
-    return cachedBmToken;
-  }
-
-  const secret = "SAMAYA_LOCAL_DEVELOPMENT_SECRET_CHANGE_BEFORE_PRODUCTION_2026";
-  const header = { alg: "HS256", typ: "JWT" };
-  const expSeconds = Math.floor(now / 1000) + 3600;
-  const payload = {
-    sub: String(currentUser.id || 9999),
-    email: currentUser.email || "branchmanager@samaya.local",
-    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name": currentUser.name || "Branch Manager",
-    "http://schemas.microsoft.com/ws/2008/06/identity/claims/role": "Organization Admin",
-    organizationId: String(currentUser.organizationId),
-    branchId: currentUser.branchId ? String(currentUser.branchId) : "",
-    exp: expSeconds,
-    iss: "SAMAYA.API",
-    aud: "SAMAYA.CLIENT"
-  };
-
-  const headerB64 = base64UrlEncode(JSON.stringify(header));
-  const payloadB64 = base64UrlEncode(JSON.stringify(payload));
-  const dataToSign = `${headerB64}.${payloadB64}`;
-
-  const encoder = new TextEncoder();
-  const key = await (window.crypto || crypto).subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await (window.crypto || crypto).subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(dataToSign)
-  );
-
-  const signatureB64 = bufferToBase64Url(signature);
-  cachedBmToken = `${dataToSign}.${signatureB64}`;
-  cachedBmExpiry = expSeconds * 1000;
-  return cachedBmToken;
-}
-
 async function request(path, options = {}) {
   let token = localStorage.getItem("samaya_token");
 
@@ -107,30 +34,6 @@ async function request(path, options = {}) {
     cleanPath = cleanPath.slice(4);
   } else if (cleanPath === "/api") {
     cleanPath = "";
-  }
-
-  // Allow Branch Manager to manage users inside their branch
-  if (cleanPath.startsWith("/users")) {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem("samaya_user") || "null");
-      if (currentUser?.role === "Branch Manager" && currentUser.organizationId) {
-        token = await getBranchManagerAuthToken(currentUser);
-      }
-    } catch (e) {
-      console.warn("Unable to elevate branch manager token:", e);
-    }
-  }
-
-  // Elevate token for order cancellation when customer requests (allows Waiter to cancel order)
-  if (cleanPath.match(/\/orders\/\d+\/status/) && options.body && options.body.includes('"Cancelled"')) {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem("samaya_user") || "null");
-      if (currentUser?.organizationId) {
-        token = await getBranchManagerAuthToken(currentUser);
-      }
-    } catch (e) {
-      console.warn("Unable to elevate order cancel token:", e);
-    }
   }
 
   // Disallow staff, waiter, chef from requesting reports

@@ -7302,9 +7302,9 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
     }
   });
 
-  // Load waiters in the branch
+  // Load waiters in the branch (only for managers/admins who assign waiters)
   useEffect(() => {
-    if (!user?.organizationId) return;
+    if (!user?.organizationId || isWaiter) return;
     const targetBranchId = effectiveBranchId || user.branchId;
     api.getUsers(user.organizationId)
       .then((res) => {
@@ -7317,7 +7317,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
         setWaiters(list);
       })
       .catch(() => {});
-  }, [user?.organizationId, user?.branchId, effectiveBranchId]);
+  }, [user?.organizationId, user?.branchId, effectiveBranchId, isWaiter]);
 
   function handleSaveAssignment(tableNum, waiterId) {
     const w = waiters.find((x) => String(x.id) === String(waiterId));
