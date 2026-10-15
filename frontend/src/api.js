@@ -1,5 +1,7 @@
 // Base server URL (configured via VITE_API_URL, e.g. "https://annamithra-e1c9.onrender.com" or "http://localhost:5042")
-const rawApiUrl = (import.meta.env.VITE_API_URL || "http://localhost:5042").trim().replace(/\/+$/, "");
+const defaultApiUrl = "https://annamithra-e1c9.onrender.com";
+
+const rawApiUrl = (import.meta.env.VITE_API_URL || defaultApiUrl).trim().replace(/\/+$/, "");
 
 // Normalize API_BASE so it always points to the /api endpoint root exactly once
 export const API_BASE = rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl}/api`;
@@ -703,8 +705,19 @@ export const api = {
     }),
 
   // Orders
-  getOrders: (status) =>
-    request(status ? `/orders?status=${encodeURIComponent(status)}` : "/orders"),
+  getOrders: (param1, param2) => {
+    const q = new URLSearchParams();
+    if (typeof param1 === "object" && param1 !== null) {
+      if (param1.status) q.set("status", param1.status);
+      if (param1.branchId) q.set("branchId", param1.branchId);
+      if (param1.saleType) q.set("saleType", param1.saleType);
+    } else {
+      if (param1) q.set("status", param1);
+      if (param2) q.set("branchId", param2);
+    }
+    const query = q.toString();
+    return request(`/orders${query ? `?${query}` : ""}`);
+  },
 
   createOrder: (body) =>
     request("/orders", { method: "POST", body: JSON.stringify(body) }),

@@ -141,24 +141,56 @@ function getStoredUser() {
   }
 }
 
+export function getPageFromUrl() {
+  if (typeof window === "undefined") return null;
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
+  const searchParams = new URLSearchParams(window.location.search);
+  const pageParam = (searchParams.get("page") || "").toLowerCase().trim();
+  const rawTarget = pageParam || path;
+  if (!rawTarget) return null;
+
+  const clean = rawTarget.split("/")[0].trim();
+  if (clean === "order" || clean === "orders") return "orders";
+  if (clean === "billing" || clean === "bill" || clean === "cashier") return "billing";
+  if (clean === "kitchen" || clean === "kms" || clean === "kitchen_mgmt" || clean === "kitchen_reports") return "kitchen";
+  if (clean === "kds") return "kds";
+  if (clean === "menu") return "menu";
+  if (clean === "production" || clean === "production_plan" || clean === "plan" || clean === "material_issue" || clean === "material_return") return "production";
+  if (clean === "purchase" || clean === "purchases" || clean === "vendors" || clean === "grn" || clean === "purchase_reports") return "purchase";
+  if (clean === "inventory") return "inventory";
+  if (clean === "branches" || clean === "branch" || clean === "branch_details") return "branches";
+  if (clean === "users" || clean === "staff") return "users";
+  if (clean === "reports" || clean === "report") return "reports";
+  if (clean === "organizations" || clean === "orgs") return "organizations";
+  if (clean === "dashboard" || clean === "home") return "dashboard";
+  return null;
+}
+
 export default function App() {
   const [user, setUser] = useState(getStoredUser);
   const [authMode, setAuthMode] = useState("login");
   const [authNotice, setAuthNotice] = useState("");
   const { theme, toggleTheme } = useTheme();
 
+  const urlPage = getPageFromUrl();
+
   // Active module for eligible restaurant-level users: "pos" | "kms" | null
   const [selectedModule, setSelectedModule] = useState(() => {
     try {
+      if (urlPage) {
+        if (["orders", "billing", "menu", "kds"].includes(urlPage)) return "pos";
+        if (["kitchen", "inventory", "purchase", "production"].includes(urlPage)) return "kms";
+      }
       return sessionStorage.getItem("samaya_selected_module") || null;
     } catch {
       return null;
     }
   });
 
-  // Target landing page within module when selected via specific tile
+  // Target landing page within module when selected via specific tile or direct URL
   const [moduleTargetPage, setModuleTargetPage] = useState(() => {
     try {
+      if (urlPage) return urlPage;
       return sessionStorage.getItem("samaya_module_target_page") || null;
     } catch {
       return null;
@@ -181,13 +213,23 @@ export default function App() {
     localStorage.setItem("samaya_user", JSON.stringify(data.user));
     setAuthNotice("");
     setUser(data.user);
-    // On fresh login, clear previous module choice so eligible users land on the Module Selection Page!
-    try {
-      sessionStorage.removeItem("samaya_selected_module");
-      sessionStorage.removeItem("samaya_module_target_page");
-    } catch {}
-    setSelectedModule(null);
-    setModuleTargetPage(null);
+    const targetUrlPage = getPageFromUrl();
+    if (targetUrlPage) {
+      const targetMod = ["orders", "billing", "menu", "kds"].includes(targetUrlPage) ? "pos" : "kms";
+      setSelectedModule(targetMod);
+      setModuleTargetPage(targetUrlPage);
+      try {
+        sessionStorage.setItem("samaya_selected_module", targetMod);
+        sessionStorage.setItem("samaya_module_target_page", targetUrlPage);
+      } catch {}
+    } else {
+      try {
+        sessionStorage.removeItem("samaya_selected_module");
+        sessionStorage.removeItem("samaya_module_target_page");
+      } catch {}
+      setSelectedModule(null);
+      setModuleTargetPage(null);
+    }
   }
 
   function logout() {
@@ -225,7 +267,10 @@ export default function App() {
   // For KMS Only / POS Only branches or roles that only support one module, automatically set the selected module
   let effectiveModule = selectedModule;
   if (!isSuperAdmin && !isOrgAdmin) {
-    if (branchModuleType === "KMS Only" || user.role === "Inventory Manager") {
+    if (urlPage) {
+      if (["orders", "billing", "menu", "kds"].includes(urlPage)) effectiveModule = "pos";
+      else if (["kitchen", "inventory", "purchase", "production"].includes(urlPage)) effectiveModule = "kms";
+    } else if (branchModuleType === "KMS Only" || user.role === "Inventory Manager") {
       effectiveModule = "kms";
     } else if (branchModuleType === "POS Only" || user.role === "Waiter") {
       effectiveModule = "pos";
@@ -879,8 +924,14 @@ function Dashboard({
   }, []);
 
   const [page, setPage] = useState(() => {
+    const urlTarget = getPageFromUrl();
+    if (urlTarget && permittedPages.includes(urlTarget)) return urlTarget;
     if (initialPage && permittedPages.includes(initialPage)) return initialPage;
-    if (isSuperAdmin || isOrgAdmin) return "dashboard";
+    if (isSuperAdmin) return "dashboard";
+    if (isOrgAdmin) {
+      if (urlTarget && permittedPages.includes(urlTarget)) return urlTarget;
+      return "dashboard";
+    }
     if (user.role === "Kitchen Manager") {
       return activeModule === "kms" ? "kitchen" : "orders";
     }
@@ -914,6 +965,27 @@ function Dashboard({
   }, [initialPage, permittedPages]);
 
   useEffect(() => {
+    function handlePopState() {
+      const urlTarget = getPageFromUrl();
+      if (urlTarget && permittedPages.includes(urlTarget)) {
+        setPage(urlTarget);
+      }
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [permittedPages]);
+
+  useEffect(() => {
+    try {
+      const currentPath = window.location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
+      const targetPath = page === "dashboard" ? "" : page;
+      if (currentPath !== targetPath && !(currentPath === "" && page === "dashboard")) {
+        window.history.replaceState(null, "", "/" + targetPath);
+      }
+    } catch {}
+  }, [page]);
+
+  useEffect(() => {
     if (!permittedPages.includes(page)) {
       const fallback = permittedPages[0] || "dashboard";
       setPage(fallback);
@@ -922,32 +994,6 @@ function Dashboard({
 
   const navSections = useMemo(
     () => {
-      if (isSuperAdmin) {
-        return [
-          {
-            title: "SUPER ADMIN",
-            items: [
-              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Platform overview & metrics" },
-              { id: "organizations", label: "Organizations", icon: Building2, desc: "Manage platform organizations" }
-            ]
-          }
-        ];
-      }
-
-      if (isOrgAdmin) {
-        return [
-          {
-            title: "ORGANIZATION ADMIN",
-            items: [
-              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Organization dashboard & branch count" },
-              { id: "branches", label: "Branches", icon: Building2, desc: "Create, list and open branch details" },
-              { id: "users", label: "Users & Access", icon: Users, desc: "Create and manage organization staff" },
-              { id: "reports", label: "Reports", icon: BarChart3, desc: "Branch reports, date filters & CSV export" }
-            ]
-          }
-        ];
-      }
-
       const overviewSection = {
         title: "OVERVIEW",
         items: [
@@ -1072,6 +1118,34 @@ function Dashboard({
         ]
       };
 
+      if (isSuperAdmin) {
+        return [
+          {
+            title: "SUPER ADMIN",
+            items: [
+              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Platform overview & metrics" },
+              { id: "organizations", label: "Organizations", icon: Building2, desc: "Manage platform organizations" }
+            ]
+          }
+        ];
+      }
+
+      if (isOrgAdmin) {
+        return [
+          {
+            title: "ORGANIZATION ADMIN",
+            items: [
+              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Organization dashboard & branch count" },
+              { id: "branches", label: "Branches", icon: Building2, desc: "Create, list and open branch details" },
+              { id: "users", label: "Users & Access", icon: Users, desc: "Create and manage organization staff" },
+              { id: "reports", label: "Reports", icon: BarChart3, desc: "Branch reports, date filters & CSV export" }
+            ]
+          },
+          posSection,
+          kitchenSection
+        ];
+      }
+
       if (isKmsOnly) {
         return [overviewSection, kitchenSection, adminSection];
       }
@@ -1115,6 +1189,8 @@ function Dashboard({
       if (isOrgAdmin) {
         return [
           { id: "qa_dashboard", label: "Dashboard", icon: LayoutDashboard, tag: "Overview", action: () => navigate("dashboard") },
+          { id: "qa_orders", label: "Create Customer Order", icon: ShoppingCart, tag: "Sales", action: () => navigate("orders") },
+          { id: "qa_billing", label: "Cashier Billing (POS)", icon: Receipt, tag: "Billing", action: () => navigate("billing") },
           { id: "qa_branches", label: "Branches", icon: Building2, tag: "Branches", action: () => navigate("branches") },
           { id: "qa_users", label: "Users & Access", icon: Users, tag: "Users", action: () => navigate("users") },
           { id: "qa_reports", label: "Reports", icon: BarChart3, tag: "Reports", action: () => navigate("reports") }
@@ -1152,6 +1228,12 @@ function Dashboard({
     setSidebarOpen(false);
     setProfileOpen(false);
     setNotificationsOpen(false);
+    try {
+      const path = id === "dashboard" ? "/" : `/${id}`;
+      if (typeof window !== "undefined" && window.location.pathname !== path) {
+        window.history.pushState(null, "", path);
+      }
+    } catch (_) {}
   }
 
   const currentHour = currentTime.getHours();
@@ -7068,11 +7150,37 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  // Multi-branch support
+  const [branches, setBranches] = useState([]);
+  const [selectedBranchId, setSelectedBranchId] = useState(() => {
+    return user?.branchId ? Number(user.branchId) : null;
+  });
+
+  const effectiveBranchId = useMemo(() => {
+    if (user?.branchId) return Number(user.branchId);
+    if (selectedBranchId) return Number(selectedBranchId);
+    if (branches.length > 0) return Number(branches[0].id);
+    return null;
+  }, [user?.branchId, selectedBranchId, branches]);
+
+  useEffect(() => {
+    api.getBranches()
+      .then((res) => {
+        const list = res || [];
+        setBranches(list);
+        if (!user?.branchId && list.length > 0 && !selectedBranchId) {
+          setSelectedBranchId(Number(list[0].id));
+        }
+      })
+      .catch((err) => console.warn("Could not load branches:", err));
+  }, [user?.branchId]);
+
   // Waiter & Table Allocation state (Requirement: Branch Manager assigns waiter for particular tables)
+  const branchKey = effectiveBranchId || user?.branchId || "all";
   const [waiters, setWaiters] = useState([]);
   const [tableAssignments, setTableAssignments] = useState(() => {
     try {
-      const key = `samaya_table_waiters_${user?.branchId || "all"}`;
+      const key = `samaya_table_waiters_${branchKey}`;
       const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : {};
     } catch {
@@ -7083,11 +7191,14 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
   // Synchronize table assignments when branch changes or on custom storage updates
   useEffect(() => {
     try {
-      const key = `samaya_table_waiters_${user?.branchId || "all"}`;
+      const key = `samaya_table_waiters_${branchKey}`;
       const saved = localStorage.getItem(key);
       setTableAssignments(saved ? JSON.parse(saved) : {});
     } catch {}
-  }, [user?.branchId]);
+  }, [branchKey]);
+
+  // Waiter view mode ("my" station vs "all" tables)
+  const [waiterViewMode, setWaiterViewMode] = useState("auto");
 
   // Robust Table Assignment Resolution Helper
   function getTableAssignment(tableNum, assignments) {
@@ -7182,42 +7293,44 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
   // Load waiters in the branch
   useEffect(() => {
     if (!user?.organizationId) return;
+    const targetBranchId = effectiveBranchId || user.branchId;
     api.getUsers(user.organizationId)
       .then((res) => {
         const list = (res || []).filter((u) => {
           const r = (u.role || u.roleName || "").toLowerCase();
           const isRoleWaiter = r === "waiter" || u.roleId === 10;
-          const matchBranch = !user.branchId || !u.branchId || Number(u.branchId) === Number(user.branchId);
+          const matchBranch = !targetBranchId || !u.branchId || Number(u.branchId) === Number(targetBranchId);
           return isRoleWaiter && matchBranch;
         });
         setWaiters(list);
       })
       .catch(() => {});
-  }, [user?.organizationId, user?.branchId]);
+  }, [user?.organizationId, user?.branchId, effectiveBranchId]);
 
   function handleSaveAssignment(tableNum, waiterId) {
     const w = waiters.find((x) => String(x.id) === String(waiterId));
     const wName = w ? (w.fullName || w.username || w.email || "Waiter") : null;
     const cleanNum = String(tableNum).trim().toUpperCase();
+    const bKey = effectiveBranchId || user?.branchId || "all";
     setTableAssignments((prev) => {
       const updated = {
         ...prev,
         [cleanNum]: w ? { id: w.id, name: wName } : null
       };
-      localStorage.setItem(`samaya_table_waiters_${user?.branchId || "all"}`, JSON.stringify(updated));
+      localStorage.setItem(`samaya_table_waiters_${bKey}`, JSON.stringify(updated));
       return updated;
     });
     setMessage(`Table ${cleanNum} assigned to ${wName || "Unassigned"}.`);
     setAssignModal(false);
   }
 
-  function getEffectiveTables(rawTables) {
-    const branchKey = user?.branchId || "default";
+  function getEffectiveTables(rawTables, targetBranchId) {
+    const bKey = targetBranchId || effectiveBranchId || user?.branchId || "default";
     let custom = [];
     let removed = [];
     try {
-      custom = JSON.parse(localStorage.getItem(`samaya_custom_tables_${branchKey}`) || "[]");
-      removed = JSON.parse(localStorage.getItem(`samaya_removed_tables_${branchKey}`) || "[]");
+      custom = JSON.parse(localStorage.getItem(`samaya_custom_tables_${bKey}`) || "[]");
+      removed = JSON.parse(localStorage.getItem(`samaya_removed_tables_${bKey}`) || "[]");
     } catch {}
 
     // Exclude removed tables (unless table is currently occupied by an active order)
@@ -7245,14 +7358,15 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
   }
 
   async function loadData() {
+    const bId = effectiveBranchId;
     try {
       const [tRes, oRes, mRes, kRes] = await Promise.all([
-        api.getTables(user?.branchId),
-        api.getOrders(),
-        api.getMenu(user?.branchId),
-        api.getKOTs({ branchId: user?.branchId, status: "Ready" })
+        api.getTables(bId),
+        api.getOrders(null, bId),
+        api.getMenu(bId),
+        api.getKOTs({ branchId: bId, status: "Ready" })
       ]);
-      const effective = getEffectiveTables(tRes || []);
+      const effective = getEffectiveTables(tRes || [], bId);
       setTables(effective);
       setOrders(oRes || []);
       setMenu(mRes || []);
@@ -7283,7 +7397,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
     loadData();
     const interval = setInterval(loadData, 4000);
     return () => clearInterval(interval);
-  }, [user?.branchId]);
+  }, [effectiveBranchId]);
 
   // Categories
   const categories = useMemo(() => {
@@ -7306,11 +7420,17 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
     });
   }, [menu, selectedCategory, menuSearch]);
 
-  // Visible tables (Requirement: Waiter only views assigned tables)
+  // Number of tables assigned to current waiter
+  const assignedCountForUser = useMemo(() => {
+    return tables.filter((t) => isTableAssignedToCurrentUser(t, user, tableAssignments)).length;
+  }, [tables, user, tableAssignments]);
+
+  // Visible tables (Requirement: Waiter views assigned tables, or all tables if no station assigned yet or toggled)
   const visibleTables = useMemo(() => {
     if (!isWaiter) return tables;
+    if (waiterViewMode === "all" || assignedCountForUser === 0) return tables;
     return tables.filter((t) => isTableAssignedToCurrentUser(t, user, tableAssignments));
-  }, [tables, isWaiter, user, tableAssignments]);
+  }, [tables, isWaiter, waiterViewMode, assignedCountForUser, user, tableAssignments]);
 
   // Filtered tables based on floor plan status filter
   const filteredTables = useMemo(() => {
@@ -7327,6 +7447,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
   // Visible orders (Requirement: Waiter only views orders for their assigned tables or their own created orders)
   const visibleOrders = useMemo(() => {
     if (!isWaiter) return orders;
+    if (waiterViewMode === "all" || assignedCountForUser === 0) return orders;
     return (orders || []).filter((o) => {
       if (o.waiterId != null && String(o.waiterId) === String(user?.id)) return true;
       const myName = (user?.fullName || user?.username || user?.name || "").toLowerCase().trim();
@@ -7334,12 +7455,22 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
       if (o.tableNumber && isTableAssignedToCurrentUser(o.tableNumber, user, tableAssignments)) return true;
       return false;
     });
-  }, [orders, isWaiter, user, tableAssignments]);
+  }, [orders, isWaiter, waiterViewMode, assignedCountForUser, user, tableAssignments]);
+
+  // Food tickets ready for current user/station (Fixes myReadyKOTs reference error)
+  const myReadyKOTs = useMemo(() => {
+    if (!isWaiter) return readyKOTs;
+    if (waiterViewMode === "all" || assignedCountForUser === 0) return readyKOTs;
+    return (readyKOTs || []).filter((k) =>
+      isTableAssignedToCurrentUser(k.tableNumber, user, tableAssignments) ||
+      (k.waiterId != null && String(k.waiterId) === String(user?.id))
+    );
+  }, [readyKOTs, isWaiter, waiterViewMode, assignedCountForUser, user, tableAssignments]);
 
   async function loadDishAvailability() {
     try {
-      const branchId = user?.branchId ? Number(user.branchId) : 1;
-      const res = await api.getDishAvailability(branchId);
+      const bId = effectiveBranchId || (user?.branchId ? Number(user.branchId) : 1);
+      const res = await api.getDishAvailability(bId);
       setDishAvailability(res || { hasPlan: false, items: [] });
     } catch {
       setDishAvailability({ hasPlan: false, items: [] });
@@ -7417,7 +7548,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
   function openStartOrder(table) {
     setError("");
     setMessage("");
-    if (isWaiter && !isTableAssignedToCurrentUser(table, user, tableAssignments)) {
+    if (isWaiter && assignedCountForUser > 0 && waiterViewMode !== "all" && !isTableAssignedToCurrentUser(table, user, tableAssignments)) {
       setError(`Table ${table?.tableNumber || ""} is not assigned to your station.`);
       return;
     }
@@ -7436,7 +7567,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
       setError("Table number is required.");
       return;
     }
-    if (isWaiter && !isTableAssignedToCurrentUser(selectedTable.trim().toUpperCase(), user, tableAssignments)) {
+    if (isWaiter && assignedCountForUser > 0 && waiterViewMode !== "all" && !isTableAssignedToCurrentUser(selectedTable.trim().toUpperCase(), user, tableAssignments)) {
       setError(`Table ${selectedTable.trim().toUpperCase()} is not assigned to your station.`);
       return;
     }
@@ -7446,8 +7577,9 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
     }
 
     try {
+      const bId = effectiveBranchId || (user.branchId ? Number(user.branchId) : 1);
       const payload = {
-        branchId: user.branchId ? Number(user.branchId) : 1,
+        branchId: bId,
         tableNumber: selectedTable.trim().toUpperCase(),
         customerName: customerName.trim() || "Walk-in Guest",
         items: cart.map((c) => ({
@@ -7538,15 +7670,6 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
       setError(err.message);
     }
   }
-
-  // Filtered ready KOTs for waiter (Requirement: Waiter only views ready food for assigned tables)
-  const myReadyKOTs = useMemo(() => {
-    if (!isWaiter) return readyKOTs || [];
-    return (readyKOTs || []).filter((k) => {
-      return isTableAssignedToCurrentUser(k.tableNumber, user, tableAssignments) ||
-        (k.waiterId != null && String(k.waiterId) === String(user?.id));
-    });
-  }, [readyKOTs, isWaiter, tableAssignments, user]);
 
   function openCloseTableConfirmation(order) {
     setError("");
@@ -7676,7 +7799,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
       setError("Please enter a table number or name (e.g. T17, Outdoor 1).");
       return;
     }
-    const branchKey = user?.branchId || "default";
+    const branchKey = effectiveBranchId || user?.branchId || "default";
     let custom = [];
     let removed = [];
     try {
@@ -7720,7 +7843,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
       return;
     }
 
-    const branchKey = user?.branchId || "default";
+    const branchKey = effectiveBranchId || user?.branchId || "default";
     let custom = [];
     let removed = [];
     try {
@@ -7740,7 +7863,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
       const next = { ...prev };
       delete next[tName];
       delete next[tableNumber];
-      localStorage.setItem(`samaya_table_waiters_${user?.branchId || "all"}`, JSON.stringify(next));
+      localStorage.setItem(`samaya_table_waiters_${branchKey}`, JSON.stringify(next));
       return next;
     });
 
@@ -7750,7 +7873,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
 
   function handleResetTables() {
     if (!window.confirm("Reset all dining tables to default system layout? Custom table additions and removals will be reset.")) return;
-    const branchKey = user?.branchId || "default";
+    const branchKey = effectiveBranchId || user?.branchId || "default";
     localStorage.removeItem(`samaya_custom_tables_${branchKey}`);
     localStorage.removeItem(`samaya_removed_tables_${branchKey}`);
     setMessage("✓ Dining tables reset to default floor plan layout.");
@@ -7786,46 +7909,104 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
   return (
     <div className="page-grid orders-page-grid">
       {/* Top Actions Bar */}
-      <div className="page-actions-bar no-print" style={{ display: "flex", justifyContent: "flex-end", gap: "8px", alignItems: "center", marginBottom: 0 }}>
-        {(isWaiter ? myReadyKOTs.length : readyKOTs.length) > 0 && (
+      <div className="page-actions-bar no-print" style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center", marginBottom: 0, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          {branches.length > 0 && (!user?.branchId || isOrgAdmin || isSuperAdmin) && (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <Building2 size={15} style={{ color: "var(--text-muted)" }} />
+              <select
+                className="form-control"
+                style={{ padding: "4px 10px", fontSize: "12px", height: "32px", width: "auto", minWidth: "180px", borderRadius: "6px" }}
+                value={effectiveBranchId || ""}
+                onChange={(e) => setSelectedBranchId(Number(e.target.value))}
+              >
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.city || b.branchCode || `#${b.id}`})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {isWaiter && (
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "var(--bg-card)", padding: "2px 4px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+              <button
+                type="button"
+                className={`compact-pill ${waiterViewMode !== "all" && assignedCountForUser > 0 ? "active" : ""}`}
+                onClick={() => setWaiterViewMode("my")}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "11.5px",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: (waiterViewMode !== "all" && assignedCountForUser > 0) ? "var(--primary-color)" : "transparent",
+                  color: (waiterViewMode !== "all" && assignedCountForUser > 0) ? "#fff" : "var(--text-muted)"
+                }}
+              >
+                My Station ({assignedCountForUser})
+              </button>
+              <button
+                type="button"
+                className={`compact-pill ${waiterViewMode === "all" || assignedCountForUser === 0 ? "active" : ""}`}
+                onClick={() => setWaiterViewMode("all")}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "11.5px",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: (waiterViewMode === "all" || assignedCountForUser === 0) ? "var(--primary-color)" : "transparent",
+                  color: (waiterViewMode === "all" || assignedCountForUser === 0) ? "#fff" : "var(--text-muted)"
+                }}
+              >
+                All Tables ({tables.length})
+              </button>
+            </div>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          {myReadyKOTs.length > 0 && (
+            <button
+              className="primary-btn compact"
+              onClick={() => setActiveTab("ready")}
+              style={{ background: "var(--accent-emerald)" }}
+            >
+              <Utensils size={15} /> {myReadyKOTs.length} Food Ready
+            </button>
+          )}
+          {!isWaiter && (
+            <button
+              className="secondary-btn compact"
+              onClick={() => setAddTableModal(true)}
+              style={{ fontWeight: 600 }}
+              title="Add a new dining table to floor plan"
+            >
+              <Plus size={15} /> Add Table
+            </button>
+          )}
           <button
             className="primary-btn compact"
-            onClick={() => setActiveTab("ready")}
-            style={{ background: "var(--accent-emerald)" }}
+            onClick={() => {
+              if (visibleTables.length === 0) {
+                setError("No tables currently available in floor plan.");
+                return;
+              }
+              const defaultTable =
+                (visibleTables.find((t) => t.status === "AVAILABLE" && !t.activeOrder)?.tableNumber || visibleTables[0].tableNumber);
+              setSelectedTable(defaultTable);
+              setCustomerName("");
+              setCart([]);
+              setStartOrderModal(true);
+            }}
+            disabled={visibleTables.length === 0}
+            title={visibleTables.length === 0 ? "No tables available" : "Create new table order"}
           >
-            <Utensils size={15} /> {isWaiter ? myReadyKOTs.length : readyKOTs.length} Food Ready
+            <Plus size={16} /> New Table Order
           </button>
-        )}
-        {!isWaiter && (
-          <button
-            className="secondary-btn compact"
-            onClick={() => setAddTableModal(true)}
-            style={{ fontWeight: 600 }}
-            title="Add a new dining table to floor plan"
-          >
-            <Plus size={15} /> Add Table
-          </button>
-        )}
-        <button
-          className="primary-btn compact"
-          onClick={() => {
-            if (isWaiter && visibleTables.length === 0) {
-              setError("No tables currently assigned to your station. Contact your Branch Manager to assign dining tables.");
-              return;
-            }
-            const defaultTable = isWaiter && visibleTables.length > 0
-              ? (visibleTables.find((t) => t.status === "AVAILABLE" && !t.activeOrder)?.tableNumber || visibleTables[0].tableNumber)
-              : "";
-            setSelectedTable(defaultTable);
-            setCustomerName("");
-            setCart([]);
-            setStartOrderModal(true);
-          }}
-          disabled={isWaiter && visibleTables.length === 0}
-          title={isWaiter && visibleTables.length === 0 ? "No tables assigned to your station" : "Create new table order"}
-        >
-          <Plus size={16} /> New Table Order
-        </button>
+        </div>
       </div>
 
       {error && <div className="error-box no-print" style={{ margin: 0 }}>{error}</div>}
