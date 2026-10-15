@@ -994,6 +994,34 @@ function Dashboard({
 
   const navSections = useMemo(
     () => {
+      if (isSuperAdmin) {
+        return [
+          {
+            title: "SUPER ADMIN",
+            items: [
+              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Platform overview & metrics" },
+              { id: "organizations", label: "Organizations", icon: Building2, desc: "Manage platform organizations" }
+            ]
+          }
+        ];
+      }
+
+      if (isOrgAdmin) {
+        return [
+          {
+            title: "ORGANIZATION ADMIN",
+            items: [
+              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Organization dashboard & branch count" },
+              { id: "branches", label: "Branches", icon: Building2, desc: "Create, list and open branch details" },
+              { id: "users", label: "Users & Access", icon: Users, desc: "Create and manage organization staff" },
+              { id: "reports", label: "Reports", icon: BarChart3, desc: "Branch reports, date filters & CSV export" }
+            ]
+          },
+          posSection,
+          kitchenSection
+        ];
+      }
+
       const overviewSection = {
         title: "OVERVIEW",
         items: [
@@ -1117,34 +1145,6 @@ function Dashboard({
           }
         ]
       };
-
-      if (isSuperAdmin) {
-        return [
-          {
-            title: "SUPER ADMIN",
-            items: [
-              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Platform overview & metrics" },
-              { id: "organizations", label: "Organizations", icon: Building2, desc: "Manage platform organizations" }
-            ]
-          }
-        ];
-      }
-
-      if (isOrgAdmin) {
-        return [
-          {
-            title: "ORGANIZATION ADMIN",
-            items: [
-              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Organization dashboard & branch count" },
-              { id: "branches", label: "Branches", icon: Building2, desc: "Create, list and open branch details" },
-              { id: "users", label: "Users & Access", icon: Users, desc: "Create and manage organization staff" },
-              { id: "reports", label: "Reports", icon: BarChart3, desc: "Branch reports, date filters & CSV export" }
-            ]
-          },
-          posSection,
-          kitchenSection
-        ];
-      }
 
       if (isKmsOnly) {
         return [overviewSection, kitchenSection, adminSection];

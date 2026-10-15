@@ -1,5 +1,8 @@
 // Base server URL (configured via VITE_API_URL, e.g. "https://annamithra-e1c9.onrender.com" or "http://localhost:5042")
-const defaultApiUrl = "https://annamithra-e1c9.onrender.com";
+const defaultApiUrl =
+  typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+    ? "https://annamithra-e1c9.onrender.com"
+    : "http://localhost:5042";
 
 const rawApiUrl = (import.meta.env.VITE_API_URL || defaultApiUrl).trim().replace(/\/+$/, "");
 
