@@ -762,22 +762,7 @@ export function getPermittedPagesForRole(role, isPosOnly = false, isKmsOnly = fa
       "branches",
       "branch_details",
       "users",
-      "reports",
-      "purchase",
-      "purchases",
-      "vendors",
-      "grn",
-      "purchase_returns",
-      "purchase_reports",
-      "purchasereports",
-      "kitchen",
-      "kitchen_mgmt",
-      "kitchen_reports",
-      "inventory",
-      "orders",
-      "kds",
-      "billing",
-      "menu"
+      "reports"
     ];
   }
 
@@ -1021,21 +1006,21 @@ function Dashboard({
             id: "purchase",
             label: "Purchase",
             icon: ShoppingBag,
-            show: !isPosOnly && ["Super Admin", "Organization Admin", "Branch Manager", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
+            show: !isPosOnly && ["Super Admin", "Branch Manager", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
             desc: "Purchase: Vendors, Purchase, Returns, GRN & Reports"
           },
           {
             id: "kitchen",
             label: "Kitchen",
             icon: ChefHat,
-            show: !isPosOnly && ["Super Admin", "Organization Admin", "Branch Manager", "Kitchen Manager", "Chef", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
+            show: !isPosOnly && ["Super Admin", "Branch Manager", "Kitchen Manager", "Chef", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
             desc: "Kitchen Stock, Inventory Items & Food Spoilage"
           },
           {
             id: "inventory",
             label: "Central Inventory",
             icon: Package,
-            show: !isPosOnly && ["Super Admin", "Organization Admin", "Branch Manager", "Kitchen Manager", "Chef", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
+            show: !isPosOnly && ["Super Admin", "Branch Manager", "Kitchen Manager", "Chef", "Inventory Manager", "Accountant", "Cashier"].includes(user.role),
             desc: "Live raw material stock, reorder levels & alerts"
           }
         ]
@@ -1048,7 +1033,7 @@ function Dashboard({
             id: "orders",
             label: "Orders",
             icon: ShoppingCart,
-            show: !isKmsOnly && ["Organization Admin", "Branch Manager", "Kitchen Manager", "Chef", "Waiter", "Accountant", "Cashier"].includes(user.role),
+            show: !isKmsOnly && ["Branch Manager", "Kitchen Manager", "Chef", "Waiter", "Accountant", "Cashier"].includes(user.role),
             desc: "Customer dining tables & takeaway orders"
           },
           {
@@ -1056,7 +1041,7 @@ function Dashboard({
             label: "Kitchen KDS",
             icon: Utensils,
             badge: "Live",
-            show: !isKmsOnly && ["Organization Admin", "Branch Manager", "Kitchen Manager", "Chef", "Waiter", "Accountant", "Cashier"].includes(user.role),
+            show: !isKmsOnly && ["Branch Manager", "Kitchen Manager", "Chef", "Waiter", "Accountant", "Cashier"].includes(user.role),
             desc: "Chef ticket queue & preparation display"
           },
           {
@@ -1064,14 +1049,14 @@ function Dashboard({
             label: "Cashier Billing",
             icon: Receipt,
             badge: "POS",
-            show: !isKmsOnly && canBill && ["Organization Admin", "Branch Manager", "Accountant", "Cashier"].includes(user.role),
+            show: !isKmsOnly && canBill && ["Branch Manager", "Accountant", "Cashier"].includes(user.role),
             desc: "Fast settlement, GST bills & previous bills history"
           },
           {
             id: "menu",
             label: "Menu",
             icon: ClipboardList,
-            show: !isKmsOnly && ["Organization Admin", "Branch Manager", "Kitchen Manager", "Chef", "Waiter", "Accountant", "Cashier"].includes(user.role),
+            show: !isKmsOnly && ["Branch Manager", "Kitchen Manager", "Chef", "Waiter", "Accountant", "Cashier"].includes(user.role),
             desc: "Available food items, categories & pricing"
           },
           {
@@ -1106,9 +1091,7 @@ function Dashboard({
               { id: "users", label: "Users & Access", icon: Users, desc: "Create and manage organization staff" },
               { id: "reports", label: "Reports", icon: BarChart3, desc: "Branch reports, date filters & CSV export" }
             ]
-          },
-          posSection,
-          kitchenSection
+          }
         ];
       }
 
@@ -1189,8 +1172,6 @@ function Dashboard({
       if (isOrgAdmin) {
         return [
           { id: "qa_dashboard", label: "Dashboard", icon: LayoutDashboard, tag: "Overview", action: () => navigate("dashboard") },
-          { id: "qa_orders", label: "Create Customer Order", icon: ShoppingCart, tag: "Sales", action: () => navigate("orders") },
-          { id: "qa_billing", label: "Cashier Billing (POS)", icon: Receipt, tag: "Billing", action: () => navigate("billing") },
           { id: "qa_branches", label: "Branches", icon: Building2, tag: "Branches", action: () => navigate("branches") },
           { id: "qa_users", label: "Users & Access", icon: Users, tag: "Users", action: () => navigate("users") },
           { id: "qa_reports", label: "Reports", icon: BarChart3, tag: "Reports", action: () => navigate("reports") }
