@@ -487,23 +487,6 @@ function AuthScreen({ mode, onModeChange, onSuccess, notice, theme, toggleTheme 
               <>
                 <Field label="Email" type="email" value={form.email} onChange={set("email")} placeholder="admin@example.com" />
                 <Field label="Password" type="password" value={form.password} onChange={set("password")} placeholder="••••••••" />
-                <div className="quick-fill-container">
-                  <span>Quick Fill:</span>
-                  <button
-                    type="button"
-                    className="quick-fill-btn"
-                    onClick={() => setForm({ email: "saravana@gmail.com", password: "SuperAdmin@123" })}
-                  >
-                    Org Admin (saravana)
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-fill-btn"
-                    onClick={() => setForm({ email: "superadmin@samaya.com", password: "SuperAdmin@123" })}
-                  >
-                    Super Admin
-                  </button>
-                </div>
               </>
             )}
 
