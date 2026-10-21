@@ -1096,7 +1096,7 @@ function InventoryItemsSection({ user, branchId, branches, canManage, onSuccess,
                 <X size={18} />
               </button>
             </div>
-            <div style={{ padding: "24px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="modal-two-col-grid" style={{ padding: "24px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
                 <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Item Code</span>
                 <p><code>{viewingItem.itemCode || `ITM-${viewingItem.id}`}</code></p>
@@ -1628,7 +1628,7 @@ function FoodSpoilageSection({ user, branchId, canManage, onSuccess, onError }) 
                 <X size={18} />
               </button>
             </div>
-            <div style={{ padding: "24px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="modal-two-col-grid" style={{ padding: "24px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
                 <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Ingredient / Material</span>
                 <p><strong>{viewingLog.itemName}</strong></p>

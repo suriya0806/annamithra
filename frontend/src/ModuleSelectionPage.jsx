@@ -432,7 +432,7 @@ export default function ModuleSelectionPage({ user, onSelectModule, onLogout }) 
                   No POS features permitted for your role
                 </div>
               ) : (
-                <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(visiblePosTiles.length, 4)}, 1fr)`, gap: "10px" }}>
+                <div className="tiles-grid tiles-grid-4">
                   {visiblePosTiles.map((tile) => {
                     const Icon = tile.icon;
                     return (
@@ -533,7 +533,7 @@ export default function ModuleSelectionPage({ user, onSelectModule, onLogout }) 
                   No KMS features permitted for your role
                 </div>
               ) : (
-                <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(visibleKmsTiles.length, 4)}, 1fr)`, gap: "10px" }}>
+                <div className="tiles-grid tiles-grid-4">
                   {visibleKmsTiles.map((tile) => {
                     const Icon = tile.icon;
                     return (

@@ -135,6 +135,32 @@ function ThemeToggle({ theme, toggleTheme }) {
 
 function getStoredUser() {
   try {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const devUser = urlParams.get("dev_user");
+      if (devUser === "branch_manager") {
+        return {
+          id: 1,
+          name: "Rajesh Kumar",
+          email: "rajesh@annamithra.com",
+          role: "Branch Manager",
+          organizationName: "ANNAMITHRA Grand",
+          branchName: "T. Nagar Flagship",
+          branchModuleType: "Both POS + KMS"
+        };
+      }
+      if (devUser === "super_admin") {
+        return {
+          id: 99,
+          name: "Super Administrator",
+          email: "superadmin@annamithra.com",
+          role: "Super Admin",
+          organizationName: "ANNAMITHRA Enterprise",
+          branchName: "All Branches",
+          branchModuleType: "Both POS + KMS"
+        };
+      }
+    }
     return JSON.parse(localStorage.getItem("samaya_user") || "null");
   } catch {
     return null;
@@ -2331,7 +2357,7 @@ function SuperAdminOrganizationsPage() {
                     />
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                  <div className="modal-two-col-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
                     <div className="form-group">
                       <label className="field-label">Organization Type</label>
                       <select
@@ -2655,7 +2681,7 @@ function SuperAdminOrganizationsPage() {
                     {updateCredsError && <div className="error-box" style={{ marginBottom: "10px" }}>{updateCredsError}</div>}
                     {updateCredsSuccess && <div className="success-box" style={{ marginBottom: "10px" }}>{updateCredsSuccess}</div>}
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                    <div className="modal-two-col-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
                       <div className="form-group">
                         <label className="field-label">Login Email</label>
                         <input
@@ -6556,7 +6582,7 @@ function InventoryPage({ user }) {
                   )}
                 </label>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="modal-two-col-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <label>
                     <span>Reorder Quantity ({reorderItem.unit || "KG"}) *</span>
                     <input
@@ -6582,7 +6608,7 @@ function InventoryPage({ user }) {
                   </label>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="modal-two-col-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <label>
                     <span>Payment Mode *</span>
                     <select
@@ -7962,7 +7988,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
           {myReadyKOTs.length > 0 && (
             <button
               className="primary-btn compact"
@@ -8043,7 +8069,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
         <>
           <div className="panel no-print" style={{ padding: "10px 18px", margin: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                 <span className="eyebrow" style={{ margin: 0 }}>FILTER TABLES:</span>
                 {["All", "Available", "Occupied", "Ready for Billing"].map((filt) => (
                   <button
@@ -8060,7 +8086,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
                   </button>
                 ))}
               </div>
-              <div style={{ display: "flex", gap: "12px", alignItems: "center", fontSize: "12px", color: "var(--text-muted)" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", fontSize: "12px", color: "var(--text-muted)", flexWrap: "wrap" }}>
                 <span>🟢 <strong>{visibleTables.filter((t) => t.status === "AVAILABLE" && !t.activeOrder).length}</strong> Available</span>
                 <span>🟠 <strong>{visibleTables.filter((t) => (t.status === "OCCUPIED" || t.activeOrder) && !t.isReadyForBilling && t.activeOrder?.status !== "Ready for Billing").length}</strong> Occupied</span>
                 <span>🛎️ <strong>{visibleTables.filter((t) => t.isReadyForBilling || t.status === "READY_FOR_BILLING" || t.activeOrder?.status === "Ready for Billing").length}</strong> Ready for Billing</span>
@@ -8660,10 +8686,10 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "20px", padding: "20px" }}>
+            <div className="order-modal-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "20px", padding: "20px" }}>
               {/* Left Column: Table/Customer input & Menu Picker */}
               <div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+                <div className="modal-two-col-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
                   {isWaiter ? (
                     <label className="field">
                       <span>Assigned Table *</span>
@@ -9143,7 +9169,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "20px", padding: "20px" }}>
+            <div className="order-modal-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "20px", padding: "20px" }}>
               {/* Left Column: Menu Picker */}
               <div>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
@@ -9384,7 +9410,7 @@ function WaiterOrderPage({ user = {}, onNavigate, canBill: canBillProp }) {
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "24px", padding: "20px" }}>
+            <div className="bill-payment-modal-grid" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "24px", padding: "20px" }}>
               {/* Left Column: Professional Thermal Paper Receipt View */}
               <div className="thermal-bill-container">
                 <ThermalReceiptView bill={selectedBill} organizationName={user?.organizationName} />
